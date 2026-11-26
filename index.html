@@ -135,7 +135,7 @@ const SEED=[
 
 const live=!!SCRIPT_URL, CACHE='dance-6dec-cache';
 const $=id=>document.getElementById(id), list=$('list');
-let baseIds=new Set(),addOpen=false,items=[],admin=false,pin='',editing=null,fbOpen=null,drag=null,saveTimer=null,dirty=false,sending=false;
+let base={},songsOpen=null,baseIds=new Set(),addOpen=false,items=[],admin=false,pin='',editing=null,fbOpen=null,drag=null,saveTimer=null,dirty=false,sending=false;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const need=s=>!s||/tbd/i.test(s);
@@ -156,10 +156,17 @@ function songsHTML(it){
 }
 function cardHTML(it,i){
   const n=admin?`<button class="num" data-act="done" aria-label="Mark number ${i+1} as performed">${i+1}</button>`:`<div class="num">${i+1}</div>`;
-  const ctl=admin?`<button data-act="up" aria-label="Move up">↑</button><button data-act="down" aria-label="Move down">↓</button><button data-act="edit">Edit</button>`:`<button data-act="fb">Feedback</button>`;
+  const ctl=admin?`<button data-act="up" aria-label="Move up">↑</button><button data-act="down" aria-label="Move down">↓</button><button data-act="edit">Edit</button>`:`<button data-act="songs">Edit songs</button><button data-act="fb">Feedback</button>`;
   return `<li class="card${it.done?' done':''}" data-id="${esc(it.id)}">${admin?`<button class="handle" aria-label="Drag to reorder">${grip}</button>`:''}${n}
   <div class="body"><div class="who">${esc(it.who)}</div>${it.tag?`<span class="tag">${esc(it.tag)}</span>`:''}${songsHTML(it)}</div>
-  <div class="ctl">${ctl}</div>${fbOpen===it.id?fbHTML(it,i):''}</li>`;
+  <div class="ctl">${ctl}</div>${fbOpen===it.id?fbHTML(it,i):''}${songsOpen===it.id?songsFormHTML(it,i):''}</li>`;
+}
+function songsFormHTML(it,i){
+  return `<form class="panel" data-songs>
+  <label>Songs for number ${i+1}, one per line<textarea id="s-songs" rows="${Math.max(3,lines(it.songs).length+1)}" maxlength="3000" placeholder="Song name https://instagram.com/reel/...">${esc(it.songs)}</textarea></label>
+  <p class="hint" style="margin:0">Paste a reel link at the end of its song’s line. For back-to-back solos write “Name – Song”.</p>
+  <label class="hp" aria-hidden="true">Leave empty<input id="s-hp" tabindex="-1" autocomplete="off"></label>
+  <div class="row"><button class="pri" type="submit" id="s-send">Save songs</button><button type="button" data-act="songscancel">Cancel</button><span class="msg" id="s-msg"></span></div></form>`;
 }
 function fbHTML(it,i){
   return `<form class="panel" data-fb>
@@ -191,7 +198,7 @@ function render(){
   $('stats').innerHTML=`<span><b>${items.length}</b>performances</span><span><b>${set}</b>songs set</span><span><b>${miss}</b>songs still needed</span>${done?`<span><b>${done}</b>done</span>`:''}`;
   $('reload').hidden=!admin;
   $('login').textContent=admin?'Lock editing':'Organiser login';
-  $('hint').textContent=admin?'Editing is on. Drag the dotted handle or use the arrows. Tap a number to tick it off during the show. Changes save to the Google Sheet automatically.':'Tap ▶ Reel to watch a dance, Feedback to send a comment, or + Add performance to add a dance to the end of the list.';
+  $('hint').textContent=admin?'Editing is on. Drag the dotted handle or use the arrows. Tap a number to tick it off during the show. Changes save to the Google Sheet automatically.':'Tap ▶ Reel to watch a dance. Use Edit songs to add or change your songs and reel links, Feedback to message the organisers, or + Add performance to add a new dance at the end.';
 }
 const status=(t,err)=>{$('status').textContent=t;$('status').className=err?'err':''};
 let tt;const say=t=>{const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800)};
@@ -200,12 +207,13 @@ async function api(action,body){
   const r=action==='list'?await fetch(SCRIPT_URL+'?action=list'):await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...body})});
   if(!r.ok)throw new Error('HTTP '+r.status);return r.json();
 }
+function fromServer(list){items=list;baseIds=new Set(list.map(x=>x.id));base=Object.fromEntries(list.map(x=>[x.id,x.songs]));store(CACHE,JSON.stringify(list))}
 async function load(quiet){
   if(!live){if(!items.length)items=SEED.map(x=>({...x}));render();status('Preview mode: this page is not connected to the Google Sheet yet.');return}
   if(!quiet)status('Loading the latest order…');
   try{const d=await api('list');if(!d.ok||!Array.isArray(d.items))throw 0;
-    if(dirty||editing||fbOpen||drag||addOpen)return;
-    items=d.items;baseIds=new Set(items.map(x=>x.id));store(CACHE,JSON.stringify(items));render();status('');
+    if(dirty||editing||fbOpen||drag||addOpen||songsOpen)return;
+    fromServer(d.items);render();status('');
   }catch(e){if(!quiet)status('Couldn’t reach the sheet. Showing the last copy on this phone.',true)}
 }
 function changed(){
@@ -214,8 +222,8 @@ function changed(){
 }
 const saveTimer_pending=()=>dirty&&Date.now()-lastChange<700;let lastChange=0;
 async function saveNow(){
-  try{const d=await api('save',{pin,items,known:baseIds.size?[...baseIds]:null});if(!d.ok)throw new Error(d.error);
-    if(Array.isArray(d.items)){baseIds=new Set(d.items.map(x=>x.id));if(d.extra&&!saveTimer_pending()&&!editing){items=d.items;render();say(d.extra===1?'Kept 1 performance that family just added':`Kept ${d.extra} performances that family just added`)}}
+  try{const d=await api('save',{pin,items,known:baseIds.size?[...baseIds]:null,base:baseIds.size?base:null});if(!d.ok)throw new Error(d.error);
+    if(Array.isArray(d.items)&&!saveTimer_pending()&&!editing){fromServer(d.items);render();if(d.extra)say(d.extra===1?'Kept 1 change that family just made':`Kept ${d.extra} changes that family just made`)}
     dirty=false;store(CACHE,JSON.stringify(items));status('Saved. Everyone sees this order now.');
   }catch(e){status(e.message==='pin'?'Wrong PIN, so changes were not saved. Lock and log in again.':'Couldn’t save. Check your connection; it will retry on your next change.',true)}
 }
@@ -223,7 +231,9 @@ async function saveNow(){
 list.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;e.preventDefault();
   const id=b.closest('.card').dataset.id,i=items.findIndex(x=>x.id===id),it=items[i],a=b.dataset.act;
-  if(a==='fb'){fbOpen=fbOpen===id?null:id;render();const t=$('f-text');t&&t.focus();return}
+  if(a==='songs'){songsOpen=songsOpen===id?null:id;fbOpen=null;addOpen=false;render();const t=$('s-songs');t&&t.focus();return}
+  if(a==='songscancel'){songsOpen=null;render();return}
+  if(a==='fb'){fbOpen=fbOpen===id?null:id;songsOpen=null;render();const t=$('f-text');t&&t.focus();return}
   if(a==='fbcancel'){fbOpen=null;render();return}
   if(a==='addcancel'){addOpen=false;render();return}
   if(!admin)return;
@@ -239,6 +249,7 @@ list.addEventListener('click',e=>{
 list.addEventListener('submit',async e=>{
   e.preventDefault();if(sending)return;
   if(e.target.matches('[data-add]')){await guestAdd();return}
+  if(e.target.matches('[data-songs]')){await guestSongs(e.target.closest('.card').dataset.id);return}
   const id=e.target.closest('.card').dataset.id,text=$('f-text').value.trim(),name=$('f-name').value.trim(),msg=$('f-msg');
   if(!text){msg.textContent='Please write something first.';return}
   store('dance-name',name);
@@ -278,6 +289,17 @@ async function unlock(p,silent){
 }
 $('unlock').addEventListener('click',()=>unlock($('pin').value.trim()));
 $('pin').addEventListener('keydown',e=>{if(e.key==='Enter')unlock($('pin').value.trim())});
+async function guestSongs(id){
+  const songs=$('s-songs').value.trim(),msg=$('s-msg'),it=items.find(x=>x.id===id);
+  if(!it)return;
+  if(!live){it.songs=songs;songsOpen=null;render();say('Preview mode: changed here only');return}
+  sending=true;$('s-send').disabled=true;msg.textContent='Saving…';
+  try{const d=await api('songs',{id,songs,hp:$('s-hp').value});
+    if(!d.ok)throw new Error(d.error);
+    songsOpen=null;if(Array.isArray(d.items))fromServer(d.items);render();say('Songs saved. Everyone sees them now.');
+  }catch(err){msg.textContent=err.message==='busy'?'Lots of changes just now. Please try again in a few minutes.':err.message==='gone'?'This performance was removed by the organiser.':'Couldn’t save. Check your connection and try again.';$('s-send').disabled=false}
+  sending=false;
+}
 async function guestAdd(){
   const who=$('a-who').value.trim(),songs=$('a-songs').value.trim(),msg=$('a-msg');
   if(!who){msg.textContent='Please write who is performing.';$('a-who').focus();return}
@@ -285,14 +307,14 @@ async function guestAdd(){
   sending=true;$('a-send').disabled=true;msg.textContent='Adding…';
   try{const d=await api('add',{who,songs,hp:$('a-hp').value});
     if(!d.ok)throw new Error(d.error);
-    addOpen=false;if(Array.isArray(d.items)){items=d.items;baseIds=new Set(items.map(x=>x.id));store(CACHE,JSON.stringify(items))}
+    addOpen=false;if(Array.isArray(d.items))fromServer(d.items);
     render();say(`Added as number ${items.length}. Thank you!`);
     const last=list.lastElementChild;last&&last.scrollIntoView({block:'center',behavior:'smooth'});
   }catch(err){msg.textContent=err.message==='busy'?'Lots of additions just now. Please try again in a few minutes.':'Couldn’t add. Check your connection and try again.';$('a-send').disabled=false}
   sending=false;
 }
 $('add').addEventListener('click',()=>{
-  if(!admin){addOpen=true;fbOpen=null;render();const el=$('a-who');el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true});return}
+  if(!admin){addOpen=true;fbOpen=null;songsOpen=null;render();const el=$('a-who');el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true});return}
   const it={id:'n'+Date.now().toString(36),who:'New performance',tag:'',songs:'',done:false};
   items.push(it);editing=it.id;render();const el=$('e-who');el.scrollIntoView({block:'center'});el.select();
 });
