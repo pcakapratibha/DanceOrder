@@ -143,7 +143,7 @@ const okUrl=u=>/^https:\/\/\S+$/i.test(u||'');
 const store=(k,v)=>{try{v===undefined?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 const fetchStore=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 function lines(songs){
-  const out=String(songs||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{
+  const out=String(songs||'').replace(/([^\s])(https?:\/\/)/gi,'$1 $2').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{
     const reels=(s.match(/https?:\/\/\S+/gi)||[]).filter(okUrl);
     (s.match(/https?:\/\/\S+/gi)||[]).forEach(u=>{s=s.replace(u,'')});s=s.replace(/\s+/g,' ').trim();
     const m=s.match(/^(.+?)\s+[–-]\s*(.*)$/);const o=m?{who:m[1].trim(),song:m[2].trim()}:{song:s};o.reels=reels;return o});
