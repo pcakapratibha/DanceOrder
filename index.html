@@ -22,7 +22,7 @@ h1{font:400 clamp(32px,7vw,48px)/1.05 "Rozha One",serif;margin:14px 0 2px;text-w
 .stats b{font:400 26px/1 "Rozha One",serif;margin-right:5px;color:#ffd36b}
 .bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar .wrap{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px;align-items:center}
-.bar .right{margin-left:auto}
+.foot{border-top:1px solid var(--line);padding-top:16px;padding-bottom:40px}
 button{font:600 15px Mukta,sans-serif;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
 button:disabled{opacity:.6;cursor:default}
 button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
@@ -33,7 +33,7 @@ button.danger{color:light-dark(#b3261e,#ff8a80)}
 #status.err{color:light-dark(#b3261e,#ff8a80)}
 #pinbox{display:none;gap:8px;flex-wrap:wrap;align-items:end;padding:12px 0}
 #pinbox.show{display:flex}
-ol{list-style:none;margin:0;padding:6px 0 60px}
+ol{list-style:none;margin:0;padding:6px 0 24px}
 .card{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:4px 8px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 4px;margin:10px 0;transition:box-shadow .15s,transform .15s}
 .admin .card{grid-template-columns:40px 52px minmax(0,1fr) auto}
 .card.dragging{box-shadow:0 12px 28px rgb(80 10 40/.28);transform:scale(1.02);border-color:var(--rani);position:relative;z-index:3}
@@ -82,18 +82,20 @@ input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--
 <div class="bar"><div class="wrap">
   <button class="pri" id="add" hidden>+ Add performance</button>
   <button id="reload" hidden>Reload from sheet</button>
-  <button class="right" id="login">Organiser login</button>
 </div></div>
 <main class="wrap">
+  <p id="status" role="status"></p>
+  <p class="hint" id="hint"></p>
+  <ol id="list"></ol>
+</main>
+<footer class="wrap foot">
+  <button id="login">Organiser login</button>
   <div id="pinbox">
     <label>Organiser PIN<input id="pin" type="password" inputmode="numeric" autocomplete="off"></label>
     <button class="pri" id="unlock">Unlock editing</button>
     <span class="msg" id="pinmsg"></span>
   </div>
-  <p id="status" role="status"></p>
-  <p class="hint" id="hint"></p>
-  <ol id="list"></ol>
-</main>
+</footer>
 <div id="toast" role="status"></div>
 <script>
 {
