@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>6 December Dance Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light dark;
+--bg:light-dark(#fff8ee,#1a0912);--card:light-dark(#ffffff,#2a1220);--ink:light-dark(#2b0f1c,#fbe9f0);
+--mute:light-dark(#7a5566,#c9a3b4);--rani:light-dark(#a3195b,#ff6fa8);--band:light-dark(#a3195b,#4a0f2c);
+--gold:light-dark(#e89a00,#ffbf3c);--goldbg:light-dark(#fff1cc,#4a3510);--line:light-dark(#f0dcc8,#46213a)}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Mukta,system-ui,sans-serif;overflow-x:clip}
+header{background:var(--band);color:#fff4e6;padding:0 0 22px}
+.toran{display:block;width:100%;height:40px}
+.wrap{max-width:760px;margin:0 auto;padding:0 max(4vw,14px)}
+h1{font:400 clamp(32px,7vw,48px)/1.05 "Rozha One",serif;margin:14px 0 2px;text-wrap:balance}
+.sub{margin:0;font-size:17px;opacity:.9}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-weight:600}
+.stats b{font:400 26px/1 "Rozha One",serif;margin-right:5px;color:#ffd36b}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;flex-wrap:wrap;gap:8px;padding-block:10px;align-items:center}
+.bar .right{margin-left:auto}
+button{font:600 15px Mukta,sans-serif;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.pri{background:var(--rani);border-color:var(--rani);color:#fff}
+button.danger{color:light-dark(#b3261e,#ff8a80)}
+.hint{color:var(--mute);font-size:14px;margin:12px 0 4px}
+#status{font-size:14px;font-weight:600;color:var(--mute);margin:10px 0 0;min-height:1.5em}
+#status.err{color:light-dark(#b3261e,#ff8a80)}
+#pinbox{display:none;gap:8px;flex-wrap:wrap;align-items:end;padding:12px 0}
+#pinbox.show{display:flex}
+ol{list-style:none;margin:0;padding:6px 0 60px}
+.card{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:4px 8px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 4px;margin:10px 0;transition:box-shadow .15s,transform .15s}
+.admin .card{grid-template-columns:40px 52px minmax(0,1fr) auto}
+.card.dragging{box-shadow:0 12px 28px rgb(80 10 40/.28);transform:scale(1.02);border-color:var(--rani);position:relative;z-index:3}
+.handle{border:0;background:none;padding:0;min-height:44px;width:40px;cursor:grab;touch-action:none;color:var(--mute);display:grid;place-items:center}
+.num{border:0;background:none;padding:0;font:400 34px/44px "Rozha One",serif;color:var(--rani);min-height:44px;width:52px;text-align:center}
+.done .num{color:var(--mute);text-decoration:line-through}
+.done .body{opacity:.5}
+.who{font-weight:700;font-size:18px;line-height:1.25;padding-top:8px}
+.tag{display:inline-block;margin-top:3px;font-size:13px;font-weight:600;color:var(--rani);border:1px solid currentColor;border-radius:99px;padding:0 9px}
+.songs{list-style:none;margin:6px 0 2px;padding:0}
+.songs li{padding:2px 0}
+.songs li b{font-weight:600;margin-right:6px}
+.songs li b::after{content:" ·";color:var(--mute)}
+.need{display:inline-block;background:var(--goldbg);color:light-dark(#7a4a00,#ffd27a);border-radius:6px;padding:0 8px;font-size:14px;font-weight:600}
+.reel{display:inline-flex;align-items:center;min-height:28px;margin-left:6px;padding:0 10px;border-radius:99px;background:var(--rani);color:#fff;font-weight:600;font-size:13px;text-decoration:none;vertical-align:middle}
+.ctl{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.ctl button{padding:0 10px;min-width:44px}
+.panel{grid-column:1/-1;padding:4px 8px;display:grid;gap:10px}
+label{display:grid;gap:4px;font-weight:600;font-size:14px;color:var(--mute)}
+input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row .danger{margin-left:auto}
+.msg{font-size:14px;font-weight:600}
+#toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,140%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;transition:transform .2s;z-index:9;max-width:92vw;font-weight:600}
+#toast.show{transform:translate(-50%,0)}
+#copybox{display:none;margin:10px 0}#copybox.show{display:block}
+@media(max-width:600px){
+  .card{grid-template-columns:40px minmax(0,1fr)}.admin .card{grid-template-columns:36px 40px minmax(0,1fr)}
+  .handle{width:36px}.num{width:40px;font-size:28px}.ctl{grid-column:2/-1}.admin .ctl{grid-column:2/-1}}
+@media(prefers-reduced-motion:reduce){.card,#toast{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <svg class="toran" aria-hidden="true"><defs><pattern id="t" width="96" height="40" patternUnits="userSpaceOnUse">
+    <path d="M0 5 Q24 13 48 5 Q72 13 96 5" style="stroke:#ffd36b;fill:none;stroke-width:1.5"/>
+    <path d="M8 7 L24 33 L40 7 Q24 13 8 7Z" style="fill:#ffb21a"/><circle cx="24" cy="11" r="3.5" style="fill:#fff4e6"/>
+    <path d="M56 7 L72 33 L88 7 Q72 13 56 7Z" style="fill:#ff5c8a"/><circle cx="72" cy="11" r="3.5" style="fill:#ffd36b"/>
+  </pattern></defs><rect width="100%" height="40" style="fill:url(#t)"/></svg>
+  <div class="wrap">
+    <h1>Dance performances</h1>
+    <p class="sub">6 December · running order</p>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+<div class="bar"><div class="wrap">
+  <button class="pri" id="add" hidden>+ Add performance</button>
+  <button id="reload" hidden>Reload from sheet</button>
+  <button id="copy">Copy for WhatsApp</button>
+  <button class="right" id="login">Organiser login</button>
+</div></div>
+<main class="wrap">
+  <div id="pinbox">
+    <label>Organiser PIN<input id="pin" type="password" inputmode="numeric" autocomplete="off"></label>
+    <button class="pri" id="unlock">Unlock editing</button>
+    <span class="msg" id="pinmsg"></span>
+  </div>
+  <p id="status" role="status"></p>
+  <p class="hint" id="hint"></p>
+  <div id="copybox"><label>Copy this text<textarea id="copytext" rows="10" readonly></textarea></label></div>
+  <ol id="list"></ol>
+</main>
+<div id="toast" role="status"></div>
+<script>
+{
+// ▼▼ Paste your Apps Script web app URL between the quotes ▼▼
+const SCRIPT_URL = '';
+// ▲▲ ------------------------------------------------------ ▲▲
+
+const SEED=[
+['Prinshu, Honey & Nishu','Ganesh Vandana','Ghar Me Padharo Gajanand Ji https://www.instagram.com/reel/DdLL2g4TTPs/?gwpx=aG84d21pcXV2ZXlp'],
+['Pooja Didi & Jiju','','Shaadi Ke Effects: Before / After Marriage (reels) https://www.instagram.com/reels/DZNW3zFP4mr/ https://www.instagram.com/reels/DI9GDESTeHV/\nSaami Saami https://www.instagram.com/reels/DYq69UVtYV7/'],
+['Kittu Rajpurohit','',''],
+['Honey, Prinshu & Nishu','Solos, back to back','Honey – Bilori Chunariya\nPrinshu – Kalyani\nNishu – Khand Lagdi, Sheesha'],
+['Reetu Didi, Reenu Didi & Pooja Didi','Solos, back to back','Reetu Didi – Jhomka Patola\nReenu Didi – \nPooja Didi – Kala Chashma'],
+['Me & Bua Ji','','Aae Ho Kahan Se Gori'],
+['Bua Ji, Mummy, Maami Ji & Pooja Didi','','Hum Tum Chori Se Bandhe Iss Dor Se'],
+['Honey, Prinshu & Nishu','','Shararat'],
+['Sonu Bhabhi','','Rajasthani song (name TBD)'],
+['Hemu Bhabhi & Bankal','','O Meri Zohra Jabeen'],
+['Me & Papa','',''],
+['Pooja & Prinshu','','Naal Nachna https://www.instagram.com/reels/DXHHLpEiKZp/\nHigh Heels https://www.instagram.com/reels/DBtnjyNsuo5/\nNachange Saari Raat https://www.instagram.com/reels/DfXF2xjKJj1/'],
+['Sonu & Amit','Couple','Jinne Shah\nMalang Sajna\nDholna'],
+['Mummy & Papa','','Meri Mackna'],
+['All couples','','Sone Ki Tagdi'],
+['Manu','',''],['Lucky','',''],['Megha','',''],['Pooja Chaudhary','',''],
+['Me','','Ghoomar']
+].map((s,i)=>({id:'p'+(i+1),who:s[0],tag:s[1],songs:s[2],done:false}));
+
+const live=!!SCRIPT_URL, CACHE='dance-6dec-cache';
+const $=id=>document.getElementById(id), list=$('list');
+let items=[],admin=false,pin='',editing=null,fbOpen=null,drag=null,saveTimer=null,dirty=false,sending=false;
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const need=s=>!s||/tbd/i.test(s);
+const okUrl=u=>/^https:\/\/\S+$/i.test(u||'');
+const store=(k,v)=>{try{v===undefined?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const fetchStore=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+function lines(songs){
+  const out=String(songs||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>{
+    const reels=(s.match(/https?:\/\/\S+/gi)||[]).filter(okUrl);
+    (s.match(/https?:\/\/\S+/gi)||[]).forEach(u=>{s=s.replace(u,'')});s=s.replace(/\s+/g,' ').trim();
+    const m=s.match(/^(.+?)\s+[–-]\s*(.*)$/);const o=m?{who:m[1].trim(),song:m[2].trim()}:{song:s};o.reels=reels;return o});
+  return out.length?out:[{song:'',reels:[]}];
+}
+const grip='<svg width="14" height="22" viewBox="0 0 14 22" aria-hidden="true">'+[4,11,18].map(y=>`<circle cx="4" cy="${y}" r="2" fill="currentColor"/><circle cx="10" cy="${y}" r="2" fill="currentColor"/>`).join('')+'</svg>';
+
+function songsHTML(it){
+  return `<ul class="songs">${lines(it.songs).map(l=>`<li>${l.who?`<b>${esc(l.who)}</b>`:''}${need(l.song)?`<span class="need">${l.song?esc(l.song):'Song needed'}</span>`:esc(l.song)}${l.reels.map((u,j,a)=>`<a class="reel" href="${esc(u)}" target="_blank" rel="noopener">▶ Reel${a.length>1?' '+(j+1):''}</a>`).join('')}</li>`).join('')}</ul>`;
+}
+function cardHTML(it,i){
+  const n=admin?`<button class="num" data-act="done" aria-label="Mark number ${i+1} as performed">${i+1}</button>`:`<div class="num">${i+1}</div>`;
+  const ctl=admin?`<button data-act="up" aria-label="Move up">↑</button><button data-act="down" aria-label="Move down">↓</button><button data-act="edit">Edit</button>`:`<button data-act="fb">Feedback</button>`;
+  return `<li class="card${it.done?' done':''}" data-id="${esc(it.id)}">${admin?`<button class="handle" aria-label="Drag to reorder">${grip}</button>`:''}${n}
+  <div class="body"><div class="who">${esc(it.who)}</div>${it.tag?`<span class="tag">${esc(it.tag)}</span>`:''}${songsHTML(it)}</div>
+  <div class="ctl">${ctl}</div>${fbOpen===it.id?fbHTML(it,i):''}</li>`;
+}
+function fbHTML(it,i){
+  return `<form class="panel" data-fb>
+  <label>Your name<input id="f-name" maxlength="60" value="${esc(fetchStore('dance-name')||'')}" autocomplete="name"></label>
+  <label>Feedback on number ${i+1}<textarea id="f-text" rows="3" maxlength="1000" placeholder="e.g. Can we swap the song, or move this earlier?"></textarea></label>
+  <label class="hp" aria-hidden="true">Leave empty<input id="f-hp" tabindex="-1" autocomplete="off"></label>
+  <div class="row"><button class="pri" type="submit" id="f-send">Send feedback</button><button type="button" data-act="fbcancel">Cancel</button><span class="msg" id="f-msg"></span></div></form>`;
+}
+function editHTML(it,i){
+  return `<li class="card" data-id="${esc(it.id)}"><div class="panel">
+  <label>Number ${i+1} · performers<input id="e-who" value="${esc(it.who)}"></label>
+  <label>Label (optional)<input id="e-tag" value="${esc(it.tag)}" placeholder="e.g. Solos, back to back"></label>
+  <label>Songs, one per line<textarea id="e-songs" rows="${Math.max(3,lines(it.songs).length+1)}">${esc(it.songs)}</textarea></label>
+  <p class="hint" style="margin:0">For back-to-back solos write “Name – Song”. Paste reel links at the end of a song’s line. Leave a song blank or write TBD to flag it.</p>
+  <div class="row"><button class="pri" data-act="save">Save</button><button data-act="cancel">Cancel</button><button class="danger" data-act="del">Delete</button></div></div></li>`;
+}
+function render(){
+  document.body.classList.toggle('admin',admin);
+  list.innerHTML=items.map((it,i)=>admin&&it.id===editing?editHTML(it,i):cardHTML(it,i)).join('');
+  let set=0,miss=0;items.forEach(it=>lines(it.songs).forEach(l=>need(l.song)?miss++:set++));
+  const done=items.filter(it=>it.done).length;
+  $('stats').innerHTML=`<span><b>${items.length}</b>performances</span><span><b>${set}</b>songs set</span><span><b>${miss}</b>songs still needed</span>${done?`<span><b>${done}</b>done</span>`:''}`;
+  $('add').hidden=$('reload').hidden=!admin;
+  $('login').textContent=admin?'Lock editing':'Organiser login';
+  $('hint').textContent=admin?'Editing is on. Drag the dotted handle or use the arrows. Tap a number to tick it off during the show. Changes save to the Google Sheet automatically.':'Tap ▶ Reel to watch a dance, or Feedback to send a comment to the organisers.';
+}
+const status=(t,err)=>{$('status').textContent=t;$('status').className=err?'err':''};
+let tt;const say=t=>{const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800)};
+
+async function api(action,body){
+  const r=action==='list'?await fetch(SCRIPT_URL+'?action=list'):await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...body})});
+  if(!r.ok)throw new Error('HTTP '+r.status);return r.json();
+}
+async function load(quiet){
+  if(!live){if(!items.length)items=SEED.map(x=>({...x}));render();status('Preview mode: this page is not connected to the Google Sheet yet.');return}
+  if(!quiet)status('Loading the latest order…');
+  try{const d=await api('list');if(!d.ok||!Array.isArray(d.items))throw 0;
+    if(dirty||editing||fbOpen||drag)return;
+    items=d.items;store(CACHE,JSON.stringify(items));render();status('');
+  }catch(e){if(!quiet)status('Couldn’t reach the sheet. Showing the last copy on this phone.',true)}
+}
+function changed(){
+  render();if(!live){status('Preview mode: changes are not saved.');return}
+  dirty=true;status('Saving…');clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,700);
+}
+async function saveNow(){
+  try{const d=await api('save',{pin,items});if(!d.ok)throw new Error(d.error);
+    dirty=false;store(CACHE,JSON.stringify(items));status('Saved. Everyone sees this order now.');
+  }catch(e){status(e.message==='pin'?'Wrong PIN, so changes were not saved. Lock and log in again.':'Couldn’t save. Check your connection; it will retry on your next change.',true)}
+}
+
+list.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;e.preventDefault();
+  const id=b.closest('.card').dataset.id,i=items.findIndex(x=>x.id===id),it=items[i],a=b.dataset.act;
+  if(a==='fb'){fbOpen=fbOpen===id?null:id;render();const t=$('f-text');t&&t.focus();return}
+  if(a==='fbcancel'){fbOpen=null;render();return}
+  if(!admin)return;
+  if(a==='done'){it.done=!it.done;changed()}
+  else if(a==='up'&&i>0){[items[i-1],items[i]]=[items[i],items[i-1]];changed()}
+  else if(a==='down'&&i<items.length-1){[items[i+1],items[i]]=[items[i],items[i+1]];changed()}
+  else if(a==='edit'){editing=id;render();$('e-who').focus()}
+  else if(a==='cancel'){editing=null;render()}
+  else if(a==='save'){it.who=$('e-who').value.trim()||'Untitled';it.tag=$('e-tag').value.trim();it.songs=$('e-songs').value.trim();editing=null;changed()}
+  else if(a==='del'){if(b.dataset.armed){items.splice(i,1);editing=null;changed();say(`Deleted “${it.who}”`)}else{b.dataset.armed=1;b.textContent='Tap again to delete'}}
+  if((a==='up'||a==='down')){const c=list.querySelector(`[data-id="${id}"] [data-act="${a}"]`);c&&c.focus()}
+});
+list.addEventListener('submit',async e=>{
+  e.preventDefault();if(sending)return;
+  const id=e.target.closest('.card').dataset.id,text=$('f-text').value.trim(),name=$('f-name').value.trim(),msg=$('f-msg');
+  if(!text){msg.textContent='Please write something first.';return}
+  store('dance-name',name);
+  if(!live){msg.textContent='Preview mode: feedback is not sent yet.';return}
+  sending=true;$('f-send').disabled=true;msg.textContent='Sending…';
+  try{const d=await api('feedback',{id,name,text,hp:$('f-hp').value});if(!d.ok)throw 0;fbOpen=null;render();say('Thank you! Your feedback was sent.')}
+  catch(err){msg.textContent='Couldn’t send. Check your connection and try again.';$('f-send').disabled=false}
+  sending=false;
+});
+
+list.addEventListener('pointerdown',e=>{
+  const h=e.target.closest('.handle');if(!h||!admin)return;e.preventDefault();
+  const card=h.closest('.card');h.setPointerCapture(e.pointerId);drag={card};card.classList.add('dragging');
+});
+list.addEventListener('pointermove',e=>{
+  if(!drag)return;const y=e.clientY;let before=null;
+  for(const c of list.querySelectorAll('.card:not(.dragging)')){const r=c.getBoundingClientRect();if(y<r.top+r.height/2){before=c;break}}
+  if(drag.card.nextElementSibling!==before)list.insertBefore(drag.card,before);
+  if(y<90)scrollBy(0,-14);else if(y>innerHeight-70)scrollBy(0,14);
+});
+const endDrag=()=>{if(!drag)return;const ids=[...list.children].map(c=>c.dataset.id);
+  const before=items.map(x=>x.id).join();items.sort((a,b)=>ids.indexOf(a.id)-ids.indexOf(b.id));drag=null;
+  if(items.map(x=>x.id).join()!==before)changed();else render()};
+list.addEventListener('pointerup',endDrag);list.addEventListener('pointercancel',endDrag);
+
+$('login').addEventListener('click',()=>{
+  if(admin){admin=false;pin='';editing=null;try{sessionStorage.removeItem('dance-pin')}catch(e){};render();load();return}
+  $('pinbox').classList.toggle('show');$('pin').focus();
+});
+async function unlock(p,silent){
+  if(!live){admin=true;pin=p;$('pinbox').classList.remove('show');render();status('Preview mode: editing works but nothing is saved.');return}
+  $('pinmsg').textContent='Checking…';
+  try{const d=await api('checkPin',{pin:p});
+    if(d.ok){admin=true;pin=p;try{sessionStorage.setItem('dance-pin',p)}catch(e){};$('pinbox').classList.remove('show');$('pin').value='';$('pinmsg').textContent='';fbOpen=null;render();if(!silent)say('Editing unlocked')}
+    else $('pinmsg').textContent='That PIN is not right.';
+  }catch(e){$('pinmsg').textContent='Couldn’t check the PIN. Try again.'}
+}
+$('unlock').addEventListener('click',()=>unlock($('pin').value.trim()));
+$('pin').addEventListener('keydown',e=>{if(e.key==='Enter')unlock($('pin').value.trim())});
+$('add').addEventListener('click',()=>{
+  const it={id:'n'+Date.now().toString(36),who:'New performance',tag:'',songs:'',done:false};
+  items.push(it);editing=it.id;render();const el=$('e-who');el.scrollIntoView({block:'center'});el.select();
+});
+$('reload').addEventListener('click',()=>{if(dirty){say('Still saving, try again in a moment');return}editing=null;load()});
+$('copy').addEventListener('click',async()=>{
+  const txt='*Dance performances · 6 December*\n\n'+items.map((it,i)=>`*${i+1}. ${it.who}*${it.tag?` (${it.tag})`:''}\n`+lines(it.songs).map(l=>'   • '+(l.who?l.who+' – ':'')+(need(l.song)?(l.song||'song TBD'):l.song)+l.reels.map(u=>'\n     Reel: '+u).join('')).join('\n')).join('\n\n');
+  try{await navigator.clipboard.writeText(txt);say('Copied, paste it in WhatsApp')}
+  catch(err){const ta=$('copytext');ta.value=txt;$('copybox').classList.add('show');ta.focus();ta.select();say('Select all and copy the text below')}
+});
+
+try{const c=JSON.parse(fetchStore(CACHE));if(Array.isArray(c)&&c.length)items=c}catch(e){}
+if(!items.length)items=SEED.map(x=>({...x}));
+render();load();
+try{const p=sessionStorage.getItem('dance-pin');if(p)unlock(p,true)}catch(e){}
+setInterval(()=>{if(document.visibilityState==='visible'&&!admin)load(true)},60000);
+}
+</script>
+</body>
+</html>
