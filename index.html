@@ -43,7 +43,7 @@ ol{list-style:none;margin:0;padding:6px 0 24px}
 .done .body{opacity:.5}
 .who{font-weight:700;font-size:18px;line-height:1.25;padding-top:8px}
 .tag{display:inline-block;margin-top:3px;font-size:13px;font-weight:600;color:var(--rani);border:1px solid currentColor;border-radius:99px;padding:0 9px}
-.songs{list-style:none;margin:6px 0 2px;padding:0}
+.songs{list-style:none;margin:6px 0 2px;padding:0;overflow-wrap:anywhere}
 .songs li{padding:2px 0}
 .songs li b{font-weight:600;margin-right:6px}
 .songs li b::after{content:" ·";color:var(--mute)}
@@ -58,11 +58,21 @@ input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .row .danger{margin-left:auto}
 .msg{font-size:14px;font-weight:600}
-#toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,140%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;transition:transform .2s;z-index:9;max-width:92vw;font-weight:600}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,140%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;transition:transform .2s;z-index:9;max-width:92vw;font-weight:600}
 #toast.show{transform:translate(-50%,0)}
 @media(max-width:600px){
-  .card{grid-template-columns:40px minmax(0,1fr)}.admin .card{grid-template-columns:36px 40px minmax(0,1fr)}
-  .handle{width:36px}.num{width:40px;font-size:28px}.ctl{grid-column:2/-1}.admin .ctl{grid-column:2/-1}}
+  header{padding-bottom:16px}.toran{height:30px}h1{font-size:32px;margin-top:10px}.sub{font-size:16px}
+  .stats{gap:4px 14px;margin-top:10px;font-size:14px}.stats b{font-size:22px}
+  .bar .wrap{padding-block:8px;gap:6px}.bar button{flex:1 1 auto}
+  .card{grid-template-columns:40px minmax(0,1fr);padding:10px 12px 12px 2px;margin:8px 0}
+  .admin .card{grid-template-columns:34px 38px minmax(0,1fr)}
+  .handle{width:34px}.num{width:40px;font-size:28px}.admin .num{width:38px}
+  .who{font-size:17px;padding-top:6px}
+  .ctl,.admin .ctl{grid-column:2/-1;justify-content:stretch;margin-top:4px}.ctl button{flex:1}
+  .reel{min-height:32px;padding:0 12px;margin:4px 0 0 6px}
+  .panel{padding:4px 2px 4px 10px}.panel .row button{flex:1 1 40%}.row .danger{margin-left:0}
+  #login,#unlock{width:100%}#pinbox label{flex:1 1 100%}
+  .foot{padding-bottom:calc(32px + env(safe-area-inset-bottom))}}
 @media(prefers-reduced-motion:reduce){.card,#toast{transition:none}}
 </style>
 </head>
@@ -80,7 +90,7 @@ input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--
   </div>
 </header>
 <div class="bar"><div class="wrap">
-  <button class="pri" id="add" hidden>+ Add performance</button>
+  <button class="pri" id="add">+ Add performance</button>
   <button id="reload" hidden>Reload from sheet</button>
 </div></div>
 <main class="wrap">
@@ -125,7 +135,7 @@ const SEED=[
 
 const live=!!SCRIPT_URL, CACHE='dance-6dec-cache';
 const $=id=>document.getElementById(id), list=$('list');
-let items=[],admin=false,pin='',editing=null,fbOpen=null,drag=null,saveTimer=null,dirty=false,sending=false;
+let baseIds=new Set(),addOpen=false,items=[],admin=false,pin='',editing=null,fbOpen=null,drag=null,saveTimer=null,dirty=false,sending=false;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const need=s=>!s||/tbd/i.test(s);
@@ -158,6 +168,13 @@ function fbHTML(it,i){
   <label class="hp" aria-hidden="true">Leave empty<input id="f-hp" tabindex="-1" autocomplete="off"></label>
   <div class="row"><button class="pri" type="submit" id="f-send">Send feedback</button><button type="button" data-act="fbcancel">Cancel</button><span class="msg" id="f-msg"></span></div></form>`;
 }
+function addHTML(){
+  return `<li class="card" id="addcard"><form class="panel" data-add>
+  <label>Number ${items.length+1} · who is performing?<input id="a-who" maxlength="200" placeholder="e.g. Riya & Kavya" autocomplete="off"></label>
+  <label>Songs, one per line (optional)<textarea id="a-songs" rows="3" maxlength="3000" placeholder="Song name&#10;Paste a reel link at the end of a line"></textarea></label>
+  <label class="hp" aria-hidden="true">Leave empty<input id="a-hp" tabindex="-1" autocomplete="off"></label>
+  <div class="row"><button class="pri" type="submit" id="a-send">Add to the list</button><button type="button" data-act="addcancel">Cancel</button><span class="msg" id="a-msg"></span></div></form></li>`;
+}
 function editHTML(it,i){
   return `<li class="card" data-id="${esc(it.id)}"><div class="panel">
   <label>Number ${i+1} · performers<input id="e-who" value="${esc(it.who)}"></label>
@@ -168,13 +185,13 @@ function editHTML(it,i){
 }
 function render(){
   document.body.classList.toggle('admin',admin);
-  list.innerHTML=items.map((it,i)=>admin&&it.id===editing?editHTML(it,i):cardHTML(it,i)).join('');
+  list.innerHTML=items.map((it,i)=>admin&&it.id===editing?editHTML(it,i):cardHTML(it,i)).join('')+(addOpen&&!admin?addHTML():'');
   let set=0,miss=0;items.forEach(it=>lines(it.songs).forEach(l=>need(l.song)?miss++:set++));
   const done=items.filter(it=>it.done).length;
   $('stats').innerHTML=`<span><b>${items.length}</b>performances</span><span><b>${set}</b>songs set</span><span><b>${miss}</b>songs still needed</span>${done?`<span><b>${done}</b>done</span>`:''}`;
-  $('add').hidden=$('reload').hidden=!admin;
+  $('reload').hidden=!admin;
   $('login').textContent=admin?'Lock editing':'Organiser login';
-  $('hint').textContent=admin?'Editing is on. Drag the dotted handle or use the arrows. Tap a number to tick it off during the show. Changes save to the Google Sheet automatically.':'Tap ▶ Reel to watch a dance, or Feedback to send a comment to the organisers.';
+  $('hint').textContent=admin?'Editing is on. Drag the dotted handle or use the arrows. Tap a number to tick it off during the show. Changes save to the Google Sheet automatically.':'Tap ▶ Reel to watch a dance, Feedback to send a comment, or + Add performance to add a dance to the end of the list.';
 }
 const status=(t,err)=>{$('status').textContent=t;$('status').className=err?'err':''};
 let tt;const say=t=>{const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800)};
@@ -187,16 +204,18 @@ async function load(quiet){
   if(!live){if(!items.length)items=SEED.map(x=>({...x}));render();status('Preview mode: this page is not connected to the Google Sheet yet.');return}
   if(!quiet)status('Loading the latest order…');
   try{const d=await api('list');if(!d.ok||!Array.isArray(d.items))throw 0;
-    if(dirty||editing||fbOpen||drag)return;
-    items=d.items;store(CACHE,JSON.stringify(items));render();status('');
+    if(dirty||editing||fbOpen||drag||addOpen)return;
+    items=d.items;baseIds=new Set(items.map(x=>x.id));store(CACHE,JSON.stringify(items));render();status('');
   }catch(e){if(!quiet)status('Couldn’t reach the sheet. Showing the last copy on this phone.',true)}
 }
 function changed(){
   render();if(!live){status('Preview mode: changes are not saved.');return}
-  dirty=true;status('Saving…');clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,700);
+  dirty=true;lastChange=Date.now();status('Saving…');clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,700);
 }
+const saveTimer_pending=()=>dirty&&Date.now()-lastChange<700;let lastChange=0;
 async function saveNow(){
-  try{const d=await api('save',{pin,items});if(!d.ok)throw new Error(d.error);
+  try{const d=await api('save',{pin,items,known:baseIds.size?[...baseIds]:null});if(!d.ok)throw new Error(d.error);
+    if(Array.isArray(d.items)){baseIds=new Set(d.items.map(x=>x.id));if(d.extra&&!saveTimer_pending()&&!editing){items=d.items;render();say(d.extra===1?'Kept 1 performance that family just added':`Kept ${d.extra} performances that family just added`)}}
     dirty=false;store(CACHE,JSON.stringify(items));status('Saved. Everyone sees this order now.');
   }catch(e){status(e.message==='pin'?'Wrong PIN, so changes were not saved. Lock and log in again.':'Couldn’t save. Check your connection; it will retry on your next change.',true)}
 }
@@ -206,6 +225,7 @@ list.addEventListener('click',e=>{
   const id=b.closest('.card').dataset.id,i=items.findIndex(x=>x.id===id),it=items[i],a=b.dataset.act;
   if(a==='fb'){fbOpen=fbOpen===id?null:id;render();const t=$('f-text');t&&t.focus();return}
   if(a==='fbcancel'){fbOpen=null;render();return}
+  if(a==='addcancel'){addOpen=false;render();return}
   if(!admin)return;
   if(a==='done'){it.done=!it.done;changed()}
   else if(a==='up'&&i>0){[items[i-1],items[i]]=[items[i],items[i-1]];changed()}
@@ -218,6 +238,7 @@ list.addEventListener('click',e=>{
 });
 list.addEventListener('submit',async e=>{
   e.preventDefault();if(sending)return;
+  if(e.target.matches('[data-add]')){await guestAdd();return}
   const id=e.target.closest('.card').dataset.id,text=$('f-text').value.trim(),name=$('f-name').value.trim(),msg=$('f-msg');
   if(!text){msg.textContent='Please write something first.';return}
   store('dance-name',name);
@@ -257,7 +278,21 @@ async function unlock(p,silent){
 }
 $('unlock').addEventListener('click',()=>unlock($('pin').value.trim()));
 $('pin').addEventListener('keydown',e=>{if(e.key==='Enter')unlock($('pin').value.trim())});
+async function guestAdd(){
+  const who=$('a-who').value.trim(),songs=$('a-songs').value.trim(),msg=$('a-msg');
+  if(!who){msg.textContent='Please write who is performing.';$('a-who').focus();return}
+  if(!live){items.push({id:'g'+Date.now().toString(36),who,tag:'',songs,done:false});addOpen=false;render();say('Preview mode: added here only');return}
+  sending=true;$('a-send').disabled=true;msg.textContent='Adding…';
+  try{const d=await api('add',{who,songs,hp:$('a-hp').value});
+    if(!d.ok)throw new Error(d.error);
+    addOpen=false;if(Array.isArray(d.items)){items=d.items;baseIds=new Set(items.map(x=>x.id));store(CACHE,JSON.stringify(items))}
+    render();say(`Added as number ${items.length}. Thank you!`);
+    const last=list.lastElementChild;last&&last.scrollIntoView({block:'center',behavior:'smooth'});
+  }catch(err){msg.textContent=err.message==='busy'?'Lots of additions just now. Please try again in a few minutes.':'Couldn’t add. Check your connection and try again.';$('a-send').disabled=false}
+  sending=false;
+}
 $('add').addEventListener('click',()=>{
+  if(!admin){addOpen=true;fbOpen=null;render();const el=$('a-who');el.scrollIntoView({block:'center',behavior:'smooth'});el.focus({preventScroll:true});return}
   const it={id:'n'+Date.now().toString(36),who:'New performance',tag:'',songs:'',done:false};
   items.push(it);editing=it.id;render();const el=$('e-who');el.scrollIntoView({block:'center'});el.select();
 });
