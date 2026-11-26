@@ -60,7 +60,6 @@ input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--
 .msg{font-size:14px;font-weight:600}
 #toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,140%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;transition:transform .2s;z-index:9;max-width:92vw;font-weight:600}
 #toast.show{transform:translate(-50%,0)}
-#copybox{display:none;margin:10px 0}#copybox.show{display:block}
 @media(max-width:600px){
   .card{grid-template-columns:40px minmax(0,1fr)}.admin .card{grid-template-columns:36px 40px minmax(0,1fr)}
   .handle{width:36px}.num{width:40px;font-size:28px}.ctl{grid-column:2/-1}.admin .ctl{grid-column:2/-1}}
@@ -83,7 +82,6 @@ input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--
 <div class="bar"><div class="wrap">
   <button class="pri" id="add" hidden>+ Add performance</button>
   <button id="reload" hidden>Reload from sheet</button>
-  <button id="copy">Copy for WhatsApp</button>
   <button class="right" id="login">Organiser login</button>
 </div></div>
 <main class="wrap">
@@ -94,7 +92,6 @@ input,textarea{font:16px/1.4 Mukta,sans-serif;color:var(--ink);background:var(--
   </div>
   <p id="status" role="status"></p>
   <p class="hint" id="hint"></p>
-  <div id="copybox"><label>Copy this text<textarea id="copytext" rows="10" readonly></textarea></label></div>
   <ol id="list"></ol>
 </main>
 <div id="toast" role="status"></div>
@@ -263,11 +260,6 @@ $('add').addEventListener('click',()=>{
   items.push(it);editing=it.id;render();const el=$('e-who');el.scrollIntoView({block:'center'});el.select();
 });
 $('reload').addEventListener('click',()=>{if(dirty){say('Still saving, try again in a moment');return}editing=null;load()});
-$('copy').addEventListener('click',async()=>{
-  const txt='*Dance performances · 6 December*\n\n'+items.map((it,i)=>`*${i+1}. ${it.who}*${it.tag?` (${it.tag})`:''}\n`+lines(it.songs).map(l=>'   • '+(l.who?l.who+' – ':'')+(need(l.song)?(l.song||'song TBD'):l.song)+l.reels.map(u=>'\n     Reel: '+u).join('')).join('\n')).join('\n\n');
-  try{await navigator.clipboard.writeText(txt);say('Copied, paste it in WhatsApp')}
-  catch(err){const ta=$('copytext');ta.value=txt;$('copybox').classList.add('show');ta.focus();ta.select();say('Select all and copy the text below')}
-});
 
 try{const c=JSON.parse(fetchStore(CACHE));if(Array.isArray(c)&&c.length)items=c}catch(e){}
 if(!items.length)items=SEED.map(x=>({...x}));
